@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WSN Simulation Environment comparing HIECF against 6 advanced AI/ML routing techniques across FND, HND, LND, Throughput, EER, Overhead, Latency, and PDR metrics.">
+  <title>WSN Simulation — HIECF vs Advanced Techniques</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header animate-in">
+    <h1 class="app-title">WSN Simulation Environment</h1>
+    <p class="app-subtitle">
+      Comparative analysis of HIECF against advanced AI/ML-based routing techniques
+      for Wireless Sensor Networks
+    </p>
+    <span class="app-badge">
+      <span class="dot"></span>
+      Hybrid Intelligent Energy-Aware Clustering Framework
+    </span>
+  </header>
+
+  <!-- ===== STATUS BAR ===== -->
+  <div class="status-bar" id="statusBar">
+    <span class="status-dot"></span>
+    <span id="statusText">Ready — Select rounds and run simulation</span>
+  </div>
+
+  <!-- ===== SIMULATION PARAMETERS ===== -->
+  <section class="glass-card animate-in animate-in-delay-1">
+    <div class="card-header">
+      <div class="icon">⚙️</div>
+      <div>
+        <div class="card-title">Simulation Parameters</div>
+        <div class="card-desc">Network configuration based on the HIECF paper</div>
+      </div>
+    </div>
+    <div class="params-grid">
+      <div class="param-item">
+        <span class="param-label">Area</span>
+        <span class="param-value">100×100 m²</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">Base Station</span>
+        <span class="param-value">(50, 150)</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">Nodes</span>
+        <span class="param-value">100</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">Initial Energy</span>
+        <span class="param-value">1.0 J</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">Packet Size</span>
+        <span class="param-value">4000 bits</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">E_elec</span>
+        <span class="param-value">50 nJ/bit</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">ε_fs</span>
+        <span class="param-value">10 pJ/bit/m²</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">ε_mp</span>
+        <span class="param-value">0.0013 pJ/bit/m⁴</span>
+      </div>
+      <div class="param-item">
+        <span class="param-label">Heterogeneity</span>
+        <span class="param-value">3-Level</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONTROLS ===== -->
+  <section class="controls-grid animate-in animate-in-delay-2">
+
+    <!-- Rounds Selector -->
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="icon">🔄</div>
+        <div>
+          <div class="card-title">Rounds</div>
+          <div class="card-desc">Select communication rounds</div>
+        </div>
+      </div>
+      <div class="rounds-group">
+        <div class="rounds-chips" id="roundsChips">
+          <button class="round-chip" data-rounds="1000">1,000</button>
+          <button class="round-chip active" data-rounds="2000">2,000</button>
+          <button class="round-chip" data-rounds="3000">3,000</button>
+          <button class="round-chip" data-rounds="4000">4,000</button>
+          <button class="round-chip" data-rounds="5000">5,000</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technique Toggles -->
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="icon">🧠</div>
+        <div>
+          <div class="card-title">Techniques</div>
+          <div class="card-desc">Toggle techniques to compare</div>
+        </div>
+      </div>
+      <div class="technique-toggles" id="techniqueToggles">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="icon">▶️</div>
+        <div>
+          <div class="card-title">Actions</div>
+          <div class="card-desc">Run or reset simulation</div>
+        </div>
+      </div>
+      <div class="action-group">
+        <button class="btn btn-primary" id="runBtn" onclick="startSimulation()">
+          <span class="spinner"></span>
+          <span class="btn-text">Run Simulation</span>
+        </button>
+        <button class="btn btn-secondary" id="resetBtn" onclick="resetSimulation()">
+          Reset
+        </button>
+        <button class="btn btn-secondary" id="exportBtn" onclick="exportCSV()" style="display:none;">
+          📥 Export CSV
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===== NETWORK VISUALIZATION ===== -->
+  <section class="network-section animate-in animate-in-delay-3">
+    <div class="glass-card" style="padding: 0; overflow: hidden;">
+      <div class="network-canvas-wrapper">
+        <canvas id="networkCanvas"></canvas>
+        <div class="canvas-overlay" id="canvasOverlay">
+          <div class="canvas-stat">
+            Nodes: <span class="value" id="overlayAlive">100</span> / 100
+          </div>
+          <div class="canvas-stat">
+            Round: <span class="value" id="overlayRound">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROGRESS BAR ===== -->
+  <section class="progress-section" id="progressSection" style="display: none;">
+    <div class="progress-bar-wrapper">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-info">
+      <span class="progress-text" id="progressText">Simulating...</span>
+      <span class="progress-percent" id="progressPercent">0%</span>
+    </div>
+  </section>
+
+  <!-- ===== METRIC SUMMARY CARDS ===== -->
+  <section class="metrics-summary" id="metricsSummary" style="display: none;">
+    <div class="metric-card fnd" id="fndCard">
+      <div class="metric-label">FND</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">First Node Dead</div>
+    </div>
+    <div class="metric-card hnd" id="hndCard">
+      <div class="metric-label">HND</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Half Node Dead</div>
+    </div>
+    <div class="metric-card lnd" id="lndCard">
+      <div class="metric-label">LND</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Last Node Dead</div>
+    </div>
+    <div class="metric-card throughput" id="throughputCard">
+      <div class="metric-label">Throughput</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Total Packets</div>
+    </div>
+    <div class="metric-card eer" id="eerCard">
+      <div class="metric-label">EER</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Energy Efficiency</div>
+    </div>
+    <div class="metric-card overhead" id="overheadCard">
+      <div class="metric-label">Overhead</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Control Packets</div>
+    </div>
+    <div class="metric-card latency" id="latencyCard">
+      <div class="metric-label">Latency</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Avg End-to-End Delay</div>
+    </div>
+    <div class="metric-card pdr" id="pdrCard">
+      <div class="metric-label">PDR</div>
+      <div class="metric-value">—</div>
+      <div class="metric-sub">Packet Delivery Ratio</div>
+    </div>
+  </section>
+
+  <!-- ===== CHARTS ===== -->
+  <section class="charts-section" id="chartsSection" style="display: none;">
+    <div class="charts-grid">
+      <!-- Alive Nodes -->
+      <div class="chart-card">
+        <div class="chart-title">Alive Nodes vs Rounds</div>
+        <div class="chart-subtitle">Network survivability over time</div>
+        <div class="chart-container">
+          <canvas id="aliveNodesChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Residual Energy -->
+      <div class="chart-card">
+        <div class="chart-title">Residual Energy vs Rounds</div>
+        <div class="chart-subtitle">Total remaining energy in the network</div>
+        <div class="chart-container">
+          <canvas id="residualEnergyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Throughput -->
+      <div class="chart-card">
+        <div class="chart-title">Cumulative Throughput vs Rounds</div>
+        <div class="chart-subtitle">Total packets delivered to base station</div>
+        <div class="chart-container">
+          <canvas id="throughputChart"></canvas>
+        </div>
+      </div>
+
+      <!-- FND, HND & LND -->
+      <div class="chart-card">
+        <div class="chart-title">FND, HND & LND Comparison</div>
+        <div class="chart-subtitle">Network lifetime indicators — First, Half & Last Node Dead (higher is better)</div>
+        <div class="chart-container">
+          <canvas id="fndHndChart"></canvas>
+        </div>
+      </div>
+
+      <!-- EER -->
+      <div class="chart-card">
+        <div class="chart-title">Energy Efficiency Ratio (EER)</div>
+        <div class="chart-subtitle">Packets delivered per Joule consumed (higher is better)</div>
+        <div class="chart-container">
+          <canvas id="eerChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Overhead -->
+      <div class="chart-card">
+        <div class="chart-title">Communication Overhead</div>
+        <div class="chart-subtitle">Total control packets generated (lower is better)</div>
+        <div class="chart-container">
+          <canvas id="overheadChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Latency over Rounds -->
+      <div class="chart-card">
+        <div class="chart-title">Average Latency vs Rounds</div>
+        <div class="chart-subtitle">End-to-end packet delay per round (lower is better)</div>
+        <div class="chart-container">
+          <canvas id="latencyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- PDR over Rounds -->
+      <div class="chart-card">
+        <div class="chart-title">Packet Delivery Ratio vs Rounds</div>
+        <div class="chart-subtitle">Percentage of packets successfully delivered (higher is better)</div>
+        <div class="chart-container">
+          <canvas id="pdrChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Latency Bar Comparison -->
+      <div class="chart-card">
+        <div class="chart-title">Average Latency Comparison</div>
+        <div class="chart-subtitle">Mean end-to-end delay across all rounds (lower is better)</div>
+        <div class="chart-container">
+          <canvas id="latencyBarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- PDR Bar Comparison -->
+      <div class="chart-card">
+        <div class="chart-title">PDR Comparison</div>
+        <div class="chart-subtitle">Average packet delivery ratio across all rounds (higher is better)</div>
+        <div class="chart-container">
+          <canvas id="pdrBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== COMPARISON TABLE ===== -->
+  <section class="table-section" id="tableSection" style="display: none;">
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="icon">📊</div>
+        <div>
+          <div class="card-title">Comparative Results Table</div>
+          <div class="card-desc">★ indicates best value for each metric</div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Technique</th>
+              <th>FND (rounds)</th>
+              <th>HND (rounds)</th>
+              <th>LND (rounds)</th>
+              <th>Throughput (pkts)</th>
+              <th>EER (pkts/J)</th>
+              <th>Overhead (ctrl pkts)</th>
+              <th>Latency (ms)</th>
+              <th>PDR (%)</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonTableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCALABILITY ANALYSIS ===== -->
+  <section class="scalability-section" id="scalabilitySection">
+    <div class="glass-card" style="margin-bottom: var(--space-lg);">
+      <div class="card-header">
+        <div class="icon">📐</div>
+        <div>
+          <div class="card-title">Scalability Analysis</div>
+          <div class="card-desc">Compare all techniques across varying node densities and network areas</div>
+        </div>
+      </div>
+      <div class="action-group" style="margin-top: var(--space-md);">
+        <button class="btn btn-primary" id="scalabilityRunBtn" onclick="startScalabilityAnalysis()" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+          <span class="spinner"></span>
+          <span class="btn-text">Run Scalability Analysis</span>
+        </button>
+      </div>
+      <!-- Scalability Progress -->
+      <div class="progress-section" id="scalabilityProgressSection" style="display: none; margin-top: var(--space-md);">
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar-fill" id="scalabilityProgressFill"></div>
+        </div>
+        <div class="progress-info">
+          <span class="progress-text" id="scalabilityProgressText">Running...</span>
+          <span class="progress-percent" id="scalabilityProgressPercent">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- === Node Density Analysis === -->
+    <div id="nodeSweepSection" style="display: none;">
+      <div class="glass-card" style="margin-bottom: var(--space-lg);">
+        <div class="card-header">
+          <div class="icon">🔢</div>
+          <div>
+            <div class="card-title">Node Density Analysis</div>
+            <div class="card-desc">Nodes = 50, 100, 150, 200 — Network Area fixed at 100×100 m²</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">FND vs Node Count</div>
+          <div class="chart-subtitle">First Node Dead across different densities</div>
+          <div class="chart-container"><canvas id="nodeFndChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">HND vs Node Count</div>
+          <div class="chart-subtitle">Half Node Dead across different densities</div>
+          <div class="chart-container"><canvas id="nodeHndChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">LND vs Node Count</div>
+          <div class="chart-subtitle">Last Node Dead across different densities</div>
+          <div class="chart-container"><canvas id="nodeLndChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Throughput vs Node Count</div>
+          <div class="chart-subtitle">Total packets delivered at different densities</div>
+          <div class="chart-container"><canvas id="nodeThroughputChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">EER vs Node Count</div>
+          <div class="chart-subtitle">Energy efficiency ratio at different densities</div>
+          <div class="chart-container"><canvas id="nodeEerChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Overhead vs Node Count</div>
+          <div class="chart-subtitle">Control packets at different densities</div>
+          <div class="chart-container"><canvas id="nodeOverheadChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Latency vs Node Count</div>
+          <div class="chart-subtitle">Average end-to-end delay at different densities</div>
+          <div class="chart-container"><canvas id="nodeLatencyChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">PDR vs Node Count</div>
+          <div class="chart-subtitle">Packet delivery ratio at different densities</div>
+          <div class="chart-container"><canvas id="nodePdrChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Node Density Table -->
+      <div class="glass-card" style="margin-top: var(--space-lg);">
+        <div class="card-header">
+          <div class="icon">📊</div>
+          <div>
+            <div class="card-title">Node Density Results Table</div>
+            <div class="card-desc">★ indicates best value per configuration</div>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Technique</th>
+                <th>FND</th>
+                <th>HND</th>
+                <th>LND</th>
+                <th>Throughput</th>
+                <th>EER</th>
+                <th>Overhead</th>
+                <th>Latency</th>
+                <th>PDR</th>
+              </tr>
+            </thead>
+            <tbody id="nodeSweepTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- === Network Area Analysis === -->
+    <div id="areaSweepSection" style="display: none;">
+      <div class="glass-card" style="margin-top: var(--space-xl); margin-bottom: var(--space-lg);">
+        <div class="card-header">
+          <div class="icon">📏</div>
+          <div>
+            <div class="card-title">Network Area Analysis</div>
+            <div class="card-desc">Area = 50×50, 100×100, 150×150 m² — Nodes fixed at 100</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">FND vs Network Area</div>
+          <div class="chart-subtitle">First Node Dead across different areas</div>
+          <div class="chart-container"><canvas id="areaFndChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">HND vs Network Area</div>
+          <div class="chart-subtitle">Half Node Dead across different areas</div>
+          <div class="chart-container"><canvas id="areaHndChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">LND vs Network Area</div>
+          <div class="chart-subtitle">Last Node Dead across different areas</div>
+          <div class="chart-container"><canvas id="areaLndChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Throughput vs Network Area</div>
+          <div class="chart-subtitle">Total packets delivered at different areas</div>
+          <div class="chart-container"><canvas id="areaThroughputChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">EER vs Network Area</div>
+          <div class="chart-subtitle">Energy efficiency ratio at different areas</div>
+          <div class="chart-container"><canvas id="areaEerChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Overhead vs Network Area</div>
+          <div class="chart-subtitle">Control packets at different areas</div>
+          <div class="chart-container"><canvas id="areaOverheadChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Latency vs Network Area</div>
+          <div class="chart-subtitle">Average end-to-end delay at different areas</div>
+          <div class="chart-container"><canvas id="areaLatencyChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">PDR vs Network Area</div>
+          <div class="chart-subtitle">Packet delivery ratio at different areas</div>
+          <div class="chart-container"><canvas id="areaPdrChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Network Area Table -->
+      <div class="glass-card" style="margin-top: var(--space-lg);">
+        <div class="card-header">
+          <div class="icon">📊</div>
+          <div>
+            <div class="card-title">Network Area Results Table</div>
+            <div class="card-desc">★ indicates best value per configuration</div>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Technique</th>
+                <th>FND</th>
+                <th>HND</th>
+                <th>LND</th>
+                <th>Throughput</th>
+                <th>EER</th>
+                <th>Overhead</th>
+                <th>Latency</th>
+                <th>PDR</th>
+              </tr>
+            </thead>
+            <tbody id="areaSweepTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TECHNIQUE DESCRIPTIONS ===== -->
+  <section class="techniques-section animate-in animate-in-delay-4">
+    <div class="glass-card" style="margin-bottom: var(--space-lg);">
+      <div class="card-header">
+        <div class="icon">📖</div>
+        <div>
+          <div class="card-title">Technique Descriptions</div>
+          <div class="card-desc">Overview of each simulated routing technique</div>
+        </div>
+      </div>
+    </div>
+    <div class="techniques-grid" id="techniquesGrid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="app-footer">
+    <p>WSN Simulation Environment — HIECF vs Advanced Techniques</p>
+    <p style="margin-top: 4px;">Based on the paper: <em>"Hybrid Intelligent Energy-Aware Clustering Framework (HIECF) for Lifetime Optimization in Wireless Sensor Networks"</em></p>
+    <p style="margin-top: 4px;">Ashish Sharma, Yogesh Sharma, Lakshay Gupta, Vansh Tomar, Satvik Rastogi, Ansh Rai — MAIT, Delhi</p>
+  </footer>
+
+</div>
+
+<!-- Scripts -->
+<script src="simulation.js"></script>
+<script src="charts.js"></script>
+<script>
+// ===== APP STATE =====
+let selectedRounds = 2000;
+let selectedTechniques = new Set(Object.keys(TECHNIQUE_PROFILES));
+let simManager = new SimulationManager();
+let chartManager = new ChartManager();
+let lastResults = null;
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', () => {
+  initRoundChips();
+  initTechniqueToggles();
+  initTechniqueDescriptions();
+  chartManager.initNetworkCanvas('networkCanvas');
+
+  // Draw initial network
+  const nodes = simManager.getNetworkSnapshot();
+  chartManager.drawNetwork(nodes);
+});
+
+// ===== ROUND SELECTION =====
+function initRoundChips() {
+  const chips = document.querySelectorAll('.round-chip');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedRounds = parseInt(chip.dataset.rounds);
+    });
+  });
+}
+
+// ===== TECHNIQUE TOGGLES =====
+function initTechniqueToggles() {
+  const container = document.getElementById('techniqueToggles');
+  if (!container) return;
+
+  Object.entries(TECHNIQUE_PROFILES).forEach(([id, profile]) => {
+    const label = document.createElement('label');
+    label.className = 'technique-toggle';
+    label.innerHTML = `
+      <input type="checkbox" value="${id}" checked>
+      <span class="toggle-indicator" style="background: ${profile.color}; border-color: ${profile.color};"></span>
+      <span class="toggle-label">${profile.name}</span>
+    `;
+
+    const checkbox = label.querySelector('input');
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        selectedTechniques.add(id);
+      } else {
+        selectedTechniques.delete(id);
+      }
+    });
+
+    container.appendChild(label);
+  });
+}
+
+// ===== TECHNIQUE DESCRIPTIONS =====
+function initTechniqueDescriptions() {
+  const grid = document.getElementById('techniquesGrid');
+  if (!grid) return;
+
+  const techTags = {
+    hiecf: ['Fuzzy Logic', 'Q-Learning', 'Multi-hop'],
+    drl_gnn: ['Deep RL', 'GNN', 'Joint Opt'],
+    td3_drl: ['Actor-Critic', 'Twin Delayed', 'Continuous'],
+    federated_rl: ['Distributed', 'Privacy', 'Aggregation'],
+    gnn_cluster: ['GCN', 'Topology', 'Spectral'],
+    dl_heed: ['Deep Learning', 'HEED', 'Neural'],
+    ml_meta: ['PSO/GA', 'ML Models', 'Swarm']
+  };
+
+  Object.entries(TECHNIQUE_PROFILES).forEach(([id, profile]) => {
+    const card = document.createElement('div');
+    card.className = 'technique-info-card';
+    card.style.setProperty('--tech-color', profile.color);
+    card.innerHTML = `
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${profile.color};"></div>
+      <h3 style="color:${profile.color};">${profile.name}</h3>
+      <p>${profile.description}</p>
+      <div class="technique-tags">
+        ${(techTags[id] || []).map(t => `<span class="technique-tag">${t}</span>`).join('')}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ===== RUN SIMULATION =====
+async function startSimulation() {
+  if (simManager.isRunning) return;
+
+  const techniques = Array.from(selectedTechniques);
+  if (techniques.length === 0) {
+    alert('Please select at least one technique.');
+    return;
+  }
+
+  // UI: show running state
+  const runBtn = document.getElementById('runBtn');
+  const statusBar = document.getElementById('statusBar');
+  const progressSection = document.getElementById('progressSection');
+
+  runBtn.classList.add('loading');
+  runBtn.disabled = true;
+  statusBar.className = 'status-bar running';
+  document.getElementById('statusText').textContent = 'Simulating...';
+  progressSection.style.display = 'block';
+
+  // Reset progress
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressPercent').textContent = '0%';
+
+  // Progress callback
+  simManager.onProgress = (fraction, techId) => {
+    const pct = Math.round(fraction * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPercent').textContent = pct + '%';
+    document.getElementById('progressText').textContent =
+      `Completed: ${TECHNIQUE_PROFILES[techId].name}`;
+  };
+
+  try {
+    const results = await simManager.runAll(techniques, selectedRounds);
+    lastResults = results;
+
+    // Show results
+    document.getElementById('metricsSummary').style.display = 'grid';
+    document.getElementById('chartsSection').style.display = 'block';
+    document.getElementById('tableSection').style.display = 'block';
+    document.getElementById('exportBtn').style.display = 'inline-flex';
+
+    // Update everything
+    chartManager.updateMetricCards(results);
+    chartManager.updateAllCharts(results);
+    chartManager.updateComparisonTable(results);
+
+    // Update status
+    statusBar.className = 'status-bar complete';
+    document.getElementById('statusText').textContent =
+      `Simulation complete — ${selectedRounds.toLocaleString()} rounds × ${techniques.length} techniques`;
+
+    // Scroll to results
+    document.getElementById('metricsSummary').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    console.error('Simulation error:', err);
+    statusBar.className = 'status-bar';
+    document.getElementById('statusText').textContent = 'Error: ' + err.message;
+  }
+
+  // Reset button
+  runBtn.classList.remove('loading');
+  runBtn.disabled = false;
+  progressSection.style.display = 'none';
+}
+
+// ===== RESET =====
+function resetSimulation() {
+  simManager.stop();
+  chartManager.destroyAll();
+  lastResults = null;
+
+  document.getElementById('metricsSummary').style.display = 'none';
+  document.getElementById('chartsSection').style.display = 'none';
+  document.getElementById('tableSection').style.display = 'none';
+  document.getElementById('exportBtn').style.display = 'none';
+  document.getElementById('progressSection').style.display = 'none';
+
+  const statusBar = document.getElementById('statusBar');
+  statusBar.className = 'status-bar';
+  document.getElementById('statusText').textContent = 'Ready — Select rounds and run simulation';
+
+  // Redraw initial network
+  const nodes = simManager.getNetworkSnapshot();
+  chartManager.drawNetwork(nodes);
+}
+
+// ===== EXPORT CSV =====
+function exportCSV() {
+  if (!lastResults) return;
+
+  const data = Object.values(lastResults);
+  let csv = 'Technique,FND,HND,LND,Throughput,EER,Overhead,Avg Latency (ms),Avg PDR (%)\n';
+  data.forEach(r => {
+    csv += `"${r.name}",${r.fnd},${r.hnd},${r.lnd},${r.throughput},${r.eer},${r.overhead},${r.avgLatency},${r.avgPdr}\n`;
+  });
+
+  // Round-by-round data
+  csv += '\n\nRound-by-Round Data\n';
+  csv += 'Round,' + data.map(r => `${r.name} Alive,${r.name} Energy,${r.name} Throughput`).join(',') + '\n';
+
+  const maxLen = Math.max(...data.map(r => r.roundData.length));
+  for (let i = 0; i < maxLen; i++) {
+    const round = data[0].roundData[i]?.round || i + 1;
+    csv += round + ',';
+    csv += data.map(r => {
+      const rd = r.roundData[i];
+      return rd ? `${rd.aliveNodes},${rd.residualEnergy.toFixed(4)},${rd.throughput}` : ',,';
+    }).join(',') + '\n';
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `wsn_simulation_${selectedRounds}rounds.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== SCALABILITY ANALYSIS =====
+async function startScalabilityAnalysis() {
+  if (simManager.isRunning) return;
+
+  const btn = document.getElementById('scalabilityRunBtn');
+  const progressSection = document.getElementById('scalabilityProgressSection');
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+  progressSection.style.display = 'block';
+  document.getElementById('scalabilityProgressFill').style.width = '0%';
+  document.getElementById('scalabilityProgressPercent').textContent = '0%';
+  document.getElementById('scalabilityProgressText').textContent = 'Starting...';
+
+  try {
+    const results = await simManager.runScalabilityAnalysis(selectedRounds, (fraction, label) => {
+      const pct = Math.round(fraction * 100);
+      document.getElementById('scalabilityProgressFill').style.width = pct + '%';
+      document.getElementById('scalabilityProgressPercent').textContent = pct + '%';
+      document.getElementById('scalabilityProgressText').textContent = `Completed: ${label}`;
+    });
+
+    // Show result sections
+    document.getElementById('nodeSweepSection').style.display = 'block';
+    document.getElementById('areaSweepSection').style.display = 'block';
+
+    // Generate Node Density charts & table
+    chartManager.createAllScalabilityCharts(
+      'node',
+      results.nodeSweep,
+      ['50 Nodes', '100 Nodes', '150 Nodes', '200 Nodes']
+    );
+    chartManager.createScalabilityTable(
+      'nodeSweepTableBody',
+      results.nodeSweep,
+      [50, 100, 150, 200],
+      'Nodes'
+    );
+
+    // Generate Area Sweep charts & table
+    chartManager.createAllScalabilityCharts(
+      'area',
+      results.areaSweep,
+      ['50×50 m²', '100×100 m²', '150×150 m²']
+    );
+    chartManager.createScalabilityTable(
+      'areaSweepTableBody',
+      results.areaSweep,
+      [50, 100, 150],
+      'Area (m²)'
+    );
+
+    document.getElementById('scalabilityProgressText').textContent =
+      `Scalability analysis complete — ${selectedRounds.toLocaleString()} rounds × 7 techniques × 7 configurations`;
+
+    // Scroll to results
+    document.getElementById('nodeSweepSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    console.error('Scalability analysis error:', err);
+    document.getElementById('scalabilityProgressText').textContent = 'Error: ' + err.message;
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+</script>
+
+</body>
+</html>
